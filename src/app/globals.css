@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --electric: #00F5FF;
+  --violet:   #7B2FFF;
+  --fire:     #FF4D00;
+  --dark:     #080810;
+  --surface:  #0F0F1A;
+  --cream:    #F0EFFF;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--dark);
+  color: var(--cream);
+  overflow-x: hidden;
+}
+
+.font-display {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.04em;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-14px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes glitch {
+  0%, 100% { clip-path: inset(0 0 100% 0); }
+  20% { clip-path: inset(30% 0 50% 0); transform: translate(-3px); }
+  40% { clip-path: inset(60% 0 20% 0); transform: translate(3px); }
+  60% { clip-path: inset(10% 0 70% 0); transform: translate(-2px); }
+  80% { clip-path: inset(80% 0 5% 0); transform: translate(2px); }
+}
+
+.animate-float { animation: float 5s ease-in-out infinite; }
+.animate-fade-up { animation: fadeUp 0.6s ease forwards; }
+
+.shimmer-text {
+  background: linear-gradient(90deg, var(--electric), var(--violet), var(--fire), var(--electric));
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s linear infinite;
+}
+
+.glass {
+  background: rgba(255,255,255,0.03);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+
+.card-glass {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 16px;
+  padding: 24px;
+  transition: border-color 0.2s;
+}
+
+.card-glass:hover {
+  border-color: rgba(0,245,255,0.2);
+}
+
+.glow-electric { box-shadow: 0 0 60px rgba(0,245,255,0.12); }
+.glow-violet { box-shadow: 0 0 60px rgba(123,47,255,0.15); }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--electric), var(--violet));
+  color: var(--dark);
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  border-radius: 6px;
+  padding: 13px 30px;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,245,255,0.25);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--cream);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 12px 28px;
+  font-size: 14px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  transition: all 0.2s;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-ghost:hover {
+  border-color: var(--electric);
+  color: var(--electric);
+}
+
+.x-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0,245,255,0.08);
+  border: 1px solid rgba(0,245,255,0.25);
+  border-radius: 4px;
+  padding: 5px 14px;
+  font-size: 12px;
+  color: var(--electric);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+input, textarea {
+  width: 100%;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  padding: 12px 14px;
+  color: var(--cream);
+  font-size: 15px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input:focus, textarea:focus {
+  border-color: var(--electric);
+}
+
+input::placeholder, textarea::placeholder {
+  color: rgba(255,255,255,0.25);
+}
