@@ -3,7 +3,12 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Eye, EyeOff } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const getSupabase = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+)
 
 export default function Login() {
   const router = useRouter()
@@ -16,6 +21,7 @@ export default function Login() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const supabase = getSupabase()
     const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
     if (error) { setError(error.message); setLoading(false); return }
     router.push('/dashboard')
