@@ -3,8 +3,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Image, Video, Sparkles, User, LogOut, Zap, Lock, TrendingUp } from 'lucide-react'
-import { supabase, UserProfile } from '@/lib/supabase'
-
+import { UserProfile } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 export default function Dashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
