@@ -5,6 +5,12 @@ import Link from 'next/link'
 import { Image, Video, Sparkles, User, LogOut, Zap, Lock, TrendingUp } from 'lucide-react'
 import { UserProfile } from '@/lib/supabase'
 import { createClient } from '@supabase/supabase-js'
+
+const getSupabase = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+)
+
 export default function Dashboard() {
   const router = useRouter()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -12,6 +18,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     const getProfile = async () => {
+      const supabase = getSupabase()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
@@ -22,6 +29,7 @@ export default function Dashboard() {
   }, [router])
 
   const handleLogout = async () => {
+    const supabase = getSupabase()
     await supabase.auth.signOut()
     router.push('/')
   }
