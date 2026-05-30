@@ -3,7 +3,12 @@ import { useState, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { Eye, EyeOff, Sparkles } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const getSupabase = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+)
 
 function SignUpForm() {
   const searchParams = useSearchParams()
@@ -18,6 +23,7 @@ function SignUpForm() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    const supabase = getSupabase()
     const { error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
