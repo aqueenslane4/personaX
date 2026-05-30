@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Check, Sparkles } from 'lucide-react'
-import { supabase } from '@/lib/supabase'
 import { PLANS } from '@/lib/stripe'
 
 export default function Pricing() {
@@ -10,13 +9,20 @@ export default function Pricing() {
 
   const handleSubscribe = async (planId: string) => {
     setLoading(planId)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { window.location.href = `/signup?plan=${planId}`; return }
+
+    // Check auth by calling a lightweight API route instead of client-side Supabase
+    const authRes = await fetch('/api/auth/me')
+    const authData = await authRes.json()
+
+    if (!authData.user) {
+      window.location.href = `/signup?plan=${planId}`
+      return
+    }
 
     const res = await fetch('/api/stripe/checkout', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ planId, userId: user.id, email: user.email }),
+      body: JSON.stringify({ planId, userId: authData.user.id, email: authData.user.email }),
     })
     const { url } = await res.json()
     if (url) window.location.href = url
@@ -41,41 +47,51 @@ export default function Pricing() {
               <div key={planId} style={{
                 background: isPro ? 'linear-gradient(145deg, rgba(10,186,181,0.08), rgba(194,24,91,0.05))' : 'rgba(255,255,255,0.03)',
                 border: isPro ? '1px solid rgba(10,186,181,0.3)' : '1px solid rgba(255,255,255,0.07)',
-                borderRadius: 20, padding: 28, position: 'relative'
+                borderRadius: 16,
+                padding: '32px 28px',
+                position: 'relative',
               }}>
                 {isPro && (
-                  <div style={{ position: 'absolute', top: -13, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg, var(--teal), var(--rose))', borderRadius: 50, padding: '4px 16px', fontSize: 12, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
-                    <Sparkles size={12} /> Most Popular
-                  </div>
+                  <div style={{
+                    position: 'absolute', top: -12, left: '50%', transform: 'translateX(-50%)',
+                    background: 'linear-gradient(90deg, var(--teal), var(--rose))',
+                    color: 'white', fontSize: 11, fontWeight: 700, letterSpacing: 1,
+                    padding: '4px 16px', borderRadius: 20,
+                  }}>MOST POPULAR</div>
                 )}
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>{plan.name}</div>
                 <div style={{ marginBottom: 24 }}>
-                  <span className="font-display" style={{ fontSize: 52, fontWeight: 700 }}>${plan.price}</span>
-                  <span style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)' }}>/mo</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                    {isPro && <Sparkles size={18} color="var(--teal)" />}
+                    <h2 style={{ fontSize: 20, fontWeight: 700, color: isPro ? 'var(--teal)' : 'var(--cream)' }}>{plan.name}</h2>
+                  </div>
+                  <div style={{ fontSize: 42, fontWeight: 800, color: 'var(--cream)', marginBottom: 4 }}>
+                    ${plan.price}<span style={{ fontSize: 16, fontWeight: 400, color: 'rgba(255,255,255,0.4)' }}>/mo</span>
+                  </div>
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {plan.features.map((f, i) => (
-                    <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, fontSize: 14, color: 'rgba(255,255,255,0.7)' }}>
-                      <Check size={15} color="var(--teal)" style={{ marginTop: 1, flexShrink: 0 }} /> {f}
+                  {plan.features.map((f: string) => (
+                    <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'rgba(255,255,255,0.75)' }}>
+                      <Check size={15} color="var(--teal)" strokeWidth={2.5} />
+                      {f}
                     </li>
                   ))}
                 </ul>
                 <button
-                  className="btn-primary"
                   onClick={() => handleSubscribe(planId)}
                   disabled={loading === planId}
-                  style={{ width: '100%', justifyContent: 'center', opacity: loading === planId ? 0.7 : 1 }}
+                  style={{
+                    width: '100%', padding: '14px 0', borderRadius: 10, border: 'none', cursor: 'pointer',
+                    background: isPro ? 'linear-gradient(90deg, var(--teal), var(--rose))' : 'rgba(255,255,255,0.08)',
+                    color: 'white', fontSize: 15, fontWeight: 700,
+                    opacity: loading === planId ? 0.7 : 1,
+                  }}
                 >
-                  {loading === planId ? 'Redirecting...' : `Get ${plan.name}`}
+                  {loading === planId ? 'Loading...' : `Get ${plan.name}`}
                 </button>
               </div>
             )
           })}
         </div>
-
-        <p style={{ textAlign: 'center', marginTop: 32, fontSize: 13, color: 'rgba(255,255,255,0.25)' }}>
-          Secured by Stripe. Cancel anytime from your dashboard.
-        </p>
       </div>
     </main>
   )
