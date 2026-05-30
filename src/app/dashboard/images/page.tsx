@@ -2,7 +2,13 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, Download, RefreshCw, Sparkles, Image as ImageIcon, Lock } from 'lucide-react'
-import { supabase, UserProfile } from '@/lib/supabase'
+import { UserProfile } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const getSupabase = () => createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+)
 
 type Persona = { id: string; name: string; vibe: string; niche: string; style: string }
 
@@ -39,6 +45,7 @@ export default function ImageStudio() {
 
   useEffect(() => {
     const load = async () => {
+      const supabase = getSupabase()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       const [{ data: prof }, { data: pers }] = await Promise.all([
@@ -56,6 +63,7 @@ export default function ImageStudio() {
     setLoading(true)
     setError('')
     try {
+      const supabase = getSupabase()
       const res = await fetch('/api/images', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -65,8 +73,6 @@ export default function ImageStudio() {
       if (data.error) { setError(data.error); setLoading(false); return }
       setGenerated(prev => [data.image, ...prev])
       setSelectedImg(data.image)
-
-      // Deduct credit
       if (profile) {
         await supabase.from('profiles').update({ image_credits: Math.max(0, profile.image_credits - 1) }).eq('id', profile.id)
         setProfile(p => p ? { ...p, image_credits: Math.max(0, p.image_credits - 1) } : p)
@@ -76,10 +82,7 @@ export default function ImageStudio() {
   }
 
   const download = (img: string) => {
-    const a = document.createElement('a')
-    a.href = img
-    a.download = `personax-${Date.now()}.jpg`
-    a.click()
+    const a = document.createElement('a'); a.href = img; a.download = `personax-${Date.now()}.jpg`; a.click()
   }
 
   const credits = profile?.image_credits || 0
@@ -89,9 +92,7 @@ export default function ImageStudio() {
     <main style={{ minHeight: '100vh', background: 'var(--dark)', paddingBottom: 60 }}>
       <nav style={{ padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, textDecoration: 'none' }}>
-            <ArrowLeft size={16} /> Dashboard
-          </Link>
+          <Link href="/dashboard" style={{ color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, textDecoration: 'none' }}><ArrowLeft size={16} /> Dashboard</Link>
           <div className="font-display" style={{ fontSize: 18, color: 'var(--cream)' }}>IMAGE <span style={{ color: 'var(--electric)' }}>STUDIO</span></div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
@@ -99,123 +100,60 @@ export default function ImageStudio() {
           <span style={{ color: credits > 5 ? 'var(--electric)' : '#ff6b6b' }}>{credits} credits left</span>
         </div>
       </nav>
-
       {outOfCredits ? (
         <div style={{ maxWidth: 480, margin: '80px auto', textAlign: 'center', padding: '0 24px' }}>
           <Lock size={44} color="rgba(255,255,255,0.2)" style={{ margin: '0 auto 20px' }} />
           <h2 className="font-display" style={{ fontSize: 32, marginBottom: 10 }}>OUT OF CREDITS</h2>
-          <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 28, lineHeight: 1.6 }}>You've used all your image credits this month. Upgrade to Pro for 100 images/mo or wait for your monthly reset.</p>
+          <p style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 28, lineHeight: 1.6 }}>You've used all your image credits this month.</p>
           <Link href="/pricing?plan=pro" className="btn-primary" style={{ justifyContent: 'center' }}>Upgrade to Pro — $19.99/mo</Link>
         </div>
       ) : (
         <div style={{ maxWidth: 1100, margin: '28px auto', padding: '0 24px', display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24 }}>
-
-          {/* CONTROLS */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-
-            {/* Persona select */}
             {personas.length > 0 && (
               <div>
                 <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Persona</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                  {personas.map(p => (
-                    <button key={p.id} onClick={() => setSelectedPersona(p)} style={{ padding: '9px 12px', borderRadius: 7, border: selectedPersona?.id === p.id ? '1px solid var(--electric)' : '1px solid rgba(255,255,255,0.08)', background: selectedPersona?.id === p.id ? 'rgba(0,245,255,0.06)' : 'transparent', color: selectedPersona?.id === p.id ? 'var(--electric)' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 13, textAlign: 'left' }}>
-                      {p.name} · {p.style}
-                    </button>
-                  ))}
+                  {personas.map(p => <button key={p.id} onClick={() => setSelectedPersona(p)} style={{ padding: '9px 12px', borderRadius: 7, border: selectedPersona?.id === p.id ? '1px solid var(--electric)' : '1px solid rgba(255,255,255,0.08)', background: selectedPersona?.id === p.id ? 'rgba(0,245,255,0.06)' : 'transparent', color: selectedPersona?.id === p.id ? 'var(--electric)' : 'rgba(255,255,255,0.5)', cursor: 'pointer', fontSize: 13, textAlign: 'left' }}>{p.name} · {p.style}</button>)}
                 </div>
               </div>
             )}
-
-            {/* Style preset */}
             <div>
               <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Visual style</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {stylePresets.map(s => (
-                  <button key={s.label} onClick={() => setStyle(s)} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 5, border: style.label === s.label ? '1px solid var(--electric)' : '1px solid rgba(255,255,255,0.08)', background: style.label === s.label ? 'rgba(0,245,255,0.08)' : 'transparent', color: style.label === s.label ? 'var(--electric)' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>
-                    {s.label}
-                  </button>
-                ))}
+                {stylePresets.map(s => <button key={s.label} onClick={() => setStyle(s)} style={{ fontSize: 12, padding: '6px 12px', borderRadius: 5, border: style.label === s.label ? '1px solid var(--electric)' : '1px solid rgba(255,255,255,0.08)', background: style.label === s.label ? 'rgba(0,245,255,0.08)' : 'transparent', color: style.label === s.label ? 'var(--electric)' : 'rgba(255,255,255,0.4)', cursor: 'pointer' }}>{s.label}</button>)}
               </div>
             </div>
-
-            {/* Quick prompts */}
             <div>
               <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Quick prompts</label>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                {quickPrompts.map(q => (
-                  <button key={q} onClick={() => setPrompt(q)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12, textAlign: 'left', transition: 'all 0.15s' }}>
-                    {q}
-                  </button>
-                ))}
+                {quickPrompts.map(q => <button key={q} onClick={() => setPrompt(q)} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.06)', background: 'transparent', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 12, textAlign: 'left' }}>{q}</button>)}
               </div>
             </div>
-
-            {/* Custom prompt */}
             <div>
               <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>Custom prompt</label>
               <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="Describe the image you want..." style={{ minHeight: 80, resize: 'vertical' }} />
             </div>
-
             {error && <p style={{ fontSize: 12, color: '#ff6b6b', lineHeight: 1.5 }}>{error}</p>}
-
             <button className="btn-primary" onClick={generate} disabled={loading || !prompt} style={{ width: '100%', justifyContent: 'center', opacity: loading || !prompt ? 0.5 : 1 }}>
               {loading ? <><RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }} /> Generating...</> : <><Sparkles size={15} /> Generate Image</>}
             </button>
-
-            <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', textAlign: 'center' }}>Uses 1 credit per generation · {credits} remaining</p>
           </div>
-
-          {/* OUTPUT */}
           <div>
             {selectedImg ? (
               <div style={{ marginBottom: 20 }}>
                 <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.08)', aspectRatio: '1', background: 'rgba(255,255,255,0.02)' }}>
                   <img src={selectedImg} alt="Generated" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  {loading && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(8,8,16,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
-                      <RefreshCw size={32} color="var(--electric)" style={{ animation: 'spin 1s linear infinite' }} />
-                      <span style={{ fontSize: 13, color: 'var(--electric)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Generating...</span>
-                    </div>
-                  )}
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-                  <button className="btn-primary" onClick={() => download(selectedImg)} style={{ flex: 1, justifyContent: 'center' }}>
-                    <Download size={15} /> Download
-                  </button>
-                  <button className="btn-ghost" onClick={generate} disabled={loading} style={{ flex: 1, justifyContent: 'center' }}>
-                    <RefreshCw size={15} /> Regenerate
-                  </button>
+                  <button className="btn-primary" onClick={() => download(selectedImg)} style={{ flex: 1, justifyContent: 'center' }}><Download size={15} /> Download</button>
+                  <button className="btn-ghost" onClick={generate} disabled={loading} style={{ flex: 1, justifyContent: 'center' }}><RefreshCw size={15} /> Regenerate</button>
                 </div>
               </div>
             ) : (
-              <div style={{ aspectRatio: '1', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
-                {loading ? (
-                  <>
-                    <RefreshCw size={36} color="var(--electric)" style={{ animation: 'spin 1s linear infinite' }} />
-                    <span style={{ fontSize: 13, color: 'var(--electric)', letterSpacing: '0.1em' }}>GENERATING YOUR IMAGE...</span>
-                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>Takes 15-30 seconds</span>
-                  </>
-                ) : (
-                  <>
-                    <ImageIcon size={48} color="rgba(255,255,255,0.1)" />
-                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.2)' }}>Your image will appear here</span>
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* History grid */}
-            {generated.length > 1 && (
-              <div>
-                <label style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', letterSpacing: '0.12em', textTransform: 'uppercase', display: 'block', marginBottom: 10 }}>History</label>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-                  {generated.slice(1).map((img, i) => (
-                    <div key={i} onClick={() => setSelectedImg(img)} style={{ aspectRatio: '1', borderRadius: 8, overflow: 'hidden', cursor: 'pointer', border: selectedImg === img ? '2px solid var(--electric)' : '1px solid rgba(255,255,255,0.06)', transition: 'all 0.15s' }}>
-                      <img src={img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    </div>
-                  ))}
-                </div>
+              <div style={{ aspectRatio: '1', borderRadius: 12, border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+                <ImageIcon size={48} color="rgba(255,255,255,0.1)" />
+                <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.2)' }}>Your image will appear here</span>
               </div>
             )}
           </div>
